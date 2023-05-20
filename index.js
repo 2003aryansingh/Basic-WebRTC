@@ -1,5 +1,3 @@
-// index.js
-
 const http = require('http');
 const express = require('express');
 const { Server: SocketIO } = require('socket.io');
@@ -23,14 +21,14 @@ io.on('connection', socket => {
     socket.emit('hello', { id: socket.id });
 
     socket.on('outgoing:call', data => {
-        const { fromOffer, to } = data;
+        const { fromOffer, to , offerCandidates} = data;
 
-        socket.to(to).emit('incomming:call', { from: socket.id, offer: fromOffer });
+        socket.to(to).emit('incomming:call', { from: socket.id, offer: fromOffer , offerCandidates: offerCandidates});
     });
 
     socket.on('call:accepted', data => {
-        const { answere, to } = data;
-        socket.to(to).emit('incomming:answere', { from: socket.id, offer: answere })
+        const { answere, to, answerICEcandidates } = data;
+        socket.to(to).emit('incomming:answere', { from: socket.id, offer: answere, answerICEcandidates: answerICEcandidates });
     });
 
 
