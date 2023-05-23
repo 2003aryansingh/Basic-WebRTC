@@ -33,7 +33,7 @@
             const peer = new RTCPeerConnection({
                 iceServers: [
                     {
-                        urls: "stun:stun.stunprotocol.org"
+                        urls: "stun:stun4.l.google.com:19302"
                     }
                 ]
             });
@@ -43,14 +43,23 @@
             const localVideo = document.getElementById('local-video');
             const remoteVideo = document.getElementById('remote-video');
 
+            peer.ontrack = (event) => {
+                    event.streams[0].getTracks().forEach((track) => {
+                        remoteStream.addTrack(track);
+                    });
+
+                    remoteVideo.srcObject = remoteStream;
+                remoteVideo.play();
+                }
+
             const createCall = async (to) => {
                 const status = document.getElementById('status');
                 status.innerText = `Calling ${to}`;
-                let offerICEcandidates;
+                let offerICEcandidates = [];
 
                 peer.onicecandidate = (event) => {
                     if(event.candidate) {
-                        offerICEcandidates = new RTCIceCandidate(event.candidate);
+                        offerICEcandidates.push(new RTCIceCandidate(event.candidate));
                     }
                 };
 
@@ -60,39 +69,6 @@
                 socket.emit('outgoing:call', { fromOffer: localOffer, to , offerCandidates: offerICEcandidates});
             }
 
-            // peer.ontrack = async ({streams: [stream]}) => {
-
-            //     console.log(stream);
-
-            //     try {
-
-            //     if (stream && stream.getVideoTracks().length > 0) {
-            //             console.log('Valid video track found');
-    
-            //             // Rest of your code to display the video track
-            //             const status = document.getElementById('status');
-            //             status.innerText = 'Incoming Stream';
-
-            //             const video = document.getElementById('remote-video');
-            //             video.srcObject = stream;
-            //             video.play();
-
-            //             const mySteam = await navigator.mediaDevices.getUserMedia({
-            //                  video: true,
-            //             });
-
-            //             for (const track of mySteam.getTracks()) {
-            //                 peer.addTrack(track, mySteam);
-            //             }
-
-            //             // ...
-            //     } else {
-            //             console.log('No valid video track found');
-            //     } 
-            //     } catch(e) {
-            //         console.log(e);
-            //     }
-            // }
 
             //gets triggered whenever a new client joins in and accordingly updates the dom to have a new button to call that client
             socket.on('users:joined', (id) => {
@@ -111,13 +87,13 @@
             socket.on('incomming:call', async data => {
                 const status = document.getElementById('status');
                 status.innerText = 'incomming:call';
-                let answerICEcandidates;
+                let answerICEcandidates = [];
 
                 const { from, offer , offerCandidates } = data;
 
                 peer.onicecandidate = (event) => {
                     if(event.candidate) {
-                        answerICEcandidates = new RTCIceCandidate(event.candidate);
+                        answerICEcandidates.push(new RTCIceCandidate(event.candidate));
                     }
                 }
 
@@ -191,15 +167,7 @@
                     console.log(error);
                 } 
 
-                peer.ontrack = (event) => {
-                    event.streams[0].getTracks().forEach((track) => {
-                        remoteStream.addTrack(track);
-                    });
 
-
-                    remoteVideo.srcObject = remoteStream;
-                remoteVideo.play();
-                }
             }
 
             window.addEventListener('load', getAndUpdateUsers);
